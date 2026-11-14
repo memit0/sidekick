@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 
 @main
 struct SidekickMain {
@@ -157,8 +158,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         refreshModelMenu()
 
         menu.addItem(.separator())
+        loginItem.target = self
+        loginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        menu.addItem(loginItem)
         menu.addItem(NSMenuItem(title: "Quit Sidekick", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
+    }
+
+    private let loginItem = NSMenuItem(title: "Open at Login", action: #selector(toggleLogin), keyEquivalent: "")
+
+    @objc private func toggleLogin() {
+        let service = SMAppService.mainApp
+        do {
+            if service.status == .enabled { try service.unregister() } else { try service.register() }
+        } catch {
+            show(error)
+        }
+        loginItem.state = service.status == .enabled ? .on : .off
     }
 
     @objc private func newConversation() {

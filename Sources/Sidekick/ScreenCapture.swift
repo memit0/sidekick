@@ -18,6 +18,8 @@ enum ScreenCapture {
     /// Captures the screen the mouse is on, downscaled so the long side is at most 1568px.
     @MainActor
     static func take() async throws -> Shot {
+        // Without permission, screencapture silently returns only the wallpaper (no windows).
+        guard CGPreflightScreenCaptureAccess() else { throw SidekickError.screenshotFailed }
         let mouse = NSEvent.mouseLocation
         let screens = NSScreen.screens
         let index = screens.firstIndex { NSMouseInRect(mouse, $0.frame, false) } ?? 0
