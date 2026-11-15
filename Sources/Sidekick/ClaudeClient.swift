@@ -19,7 +19,7 @@ final class ClaudeClient {
         let w = Int(shot.pixelSize.width), h = Int(shot.pixelSize.height)
         let cx = Int(shot.cursorInImage.x), cy = Int(shot.cursorInImage.y)
         let text = """
-        [Screenshot of the user's screen is attached: \(w)x\(h) px. Their mouse cursor is at (\(cx), \(cy)).]
+        [Screenshot of the user's screen is attached: \(w)x\(h) px. Their mouse cursor is at (\(cx), \(cy)).\(shot.marked ? " The red marker stroke is the user's highlight of what they're asking about." : "")]
         The user said: "\(question)"
         """
 

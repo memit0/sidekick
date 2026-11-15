@@ -62,6 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         ui.text = ""
         ui.phase = .listening
+        overlay.startMarker()
         do {
             try recognizer.start()
         } catch {
@@ -70,11 +71,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func stopListening() {
+        let marker = overlay.finishMarker()
         guard ui.phase == .listening else { return }
-        turnTask = Task { await runTurn() }
+        turnTask = Task { await runTurn(marker: marker) }
     }
 
-    private func runTurn() async {
+    private func runTurn(marker: [NSPoint]) async {
         let question = await recognizer.stop().trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty else {
             ui.phase = .idle
@@ -86,7 +88,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         do {
             guard let shotTask else { throw SidekickError.screenshotFailed }
-            let shot = try await shotTask.value
+            var shot = try await shotTask.value
+            ScreenCapture.drawMarker(marker, on: &shot)
             defer { try? FileManager.default.removeItem(at: shot.url) }
 
             let raw = try await claude.ask(question, shot: shot)

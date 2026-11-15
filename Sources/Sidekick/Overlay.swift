@@ -11,6 +11,7 @@ final class OverlayModel: ObservableObject {
     @Published var size: CGSize = .zero
     @Published var target: CGPoint?
     @Published var targetLabel: String?
+    @Published var marker: [CGPoint] = []   // highlight stroke while the hotkey is held, window coordinates
 }
 
 /// A transparent, click-through window over the current screen that draws the buddy next to the cursor.
@@ -21,7 +22,26 @@ final class OverlayController {
     private var window: NSWindow!
     private var timer: Timer?
     private var screenFrame: NSRect = .zero
-    private var pinnedFrame: NSRect? // keeps the overlay on one screen while pointing
+    private var pinnedFrame: NSRect? // keeps the overlay on one screen while pointing or drawing
+    private var markerPoints: [NSPoint] = [] // global AppKit coordinates
+
+    /// Starts recording the cursor path as a highlight on the screen the cursor is on.
+    func startMarker() {
+        markerPoints = []
+        model.marker = []
+        let mouse = NSEvent.mouseLocation
+        pinnedFrame = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) })?.frame
+    }
+
+    /// Stops recording, hides the stroke, and returns it (global coordinates) if it's long enough to mean something.
+    func finishMarker() -> [NSPoint] {
+        let points = markerPoints
+        markerPoints = []
+        model.marker = []
+        pinnedFrame = nil
+        let length = zip(points, points.dropFirst()).reduce(0) { $0 + hypot($1.1.x - $1.0.x, $1.1.y - $1.0.y) }
+        return length >= 30 ? points : [] // a small wobble isn't a highlight
+    }
 
     func show() {
         let frame = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
@@ -65,6 +85,13 @@ final class OverlayController {
         move(to: frame)
         let p = CGPoint(x: mouse.x - frame.minX, y: frame.maxY - mouse.y)
         if p != model.cursor { model.cursor = p }
+
+        // While the hotkey is held (marker started), extend the stroke; only points on the pinned screen count.
+        if model.phase == .listening, NSMouseInRect(mouse, frame, false),
+           markerPoints.last.map({ hypot(mouse.x - $0.x, mouse.y - $0.y) >= 2 }) ?? true {
+            markerPoints.append(mouse)
+            model.marker.append(p)
+        }
     }
 
     private func move(to frame: NSRect) {
@@ -84,6 +111,11 @@ struct OverlayView: View {
         let anchor = model.target ?? model.cursor
         ZStack(alignment: .topLeading) {
             Color.clear
+
+            if model.marker.count > 1 {
+                Path { $0.addLines(model.marker) }
+                    .stroke(Color.red.opacity(0.55), style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
+            }
 
             if let target = model.target {
                 TargetMarker(label: model.targetLabel)

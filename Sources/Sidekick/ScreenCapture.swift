@@ -7,6 +7,32 @@ enum ScreenCapture {
         let pixelSize: CGSize      // size of the (downscaled) image sent to Claude
         let screenFrame: NSRect    // the captured screen, in global AppKit coordinates
         let cursorInImage: CGPoint // mouse position in image pixels (top-left origin)
+        var marked = false         // a highlight stroke was drawn onto the image
+    }
+
+    /// Paints the user's highlight stroke (global AppKit coordinates) onto the screenshot file.
+    /// The overlay is excluded from captures, so the stroke has to be added afterwards.
+    static func drawMarker(_ points: [NSPoint], on shot: inout Shot) {
+        guard points.count > 1,
+              let source = CGImageSourceCreateWithURL(shot.url as CFURL, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+              let ctx = CGContext(data: nil, width: image.width, height: image.height, bitsPerComponent: 8,
+                                  bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+        let f = shot.screenFrame
+        let scale = CGFloat(image.width) / f.width
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        // CoreGraphics and AppKit both use a bottom-left origin, so only offset and scale.
+        ctx.addLines(between: points.map { CGPoint(x: ($0.x - f.minX) * scale, y: ($0.y - f.minY) * scale) })
+        ctx.setStrokeColor(red: 1, green: 0, blue: 0, alpha: 0.6)
+        ctx.setLineWidth(10 * scale)
+        ctx.setLineCap(.round)
+        ctx.setLineJoin(.round)
+        ctx.strokePath()
+        guard let marked = ctx.makeImage(),
+              let dest = CGImageDestinationCreateWithURL(shot.url as CFURL, "public.jpeg" as CFString, 1, nil) else { return }
+        CGImageDestinationAddImage(dest, marked, nil)
+        if CGImageDestinationFinalize(dest) { shot.marked = true }
     }
 
     static let workDir: URL = {
