@@ -12,7 +12,11 @@ cp "$(swift build -c release --show-bin-path)/Sidekick" "$APP/Contents/MacOS/Sid
 cp Info.plist "$APP/Contents/Info.plist"
 mkdir -p "$APP/Contents/Resources"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
-codesign --force --sign - "$APP"
+# Sign with your Apple Development certificate if you have one: its identity stays the same
+# across rebuilds, so macOS keeps Sidekick's permissions. Otherwise sign ad-hoc (re-grant after each build).
+ID=$(security find-identity -v -p codesigning | awk -F'"' '/Apple Development/ {print $2; exit}')
+codesign --force --sign "${ID:--}" "$APP"
+echo "Signed with: ${ID:-ad-hoc}"
 
 echo "Built $APP"
 echo "Install: cp -R $APP /Applications/ && open /Applications/Sidekick.app"

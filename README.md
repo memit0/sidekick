@@ -30,7 +30,7 @@ open /Applications/Sidekick.app
 
 On first launch, allow **Microphone**, **Speech Recognition** and **Screen Recording** (System Settings → Privacy & Security). Relaunch Sidekick after granting Screen Recording.
 
-> Rebuilding re-signs the app, so macOS may ask for permissions again. If screenshots stop working after a rebuild, remove Sidekick from the Screen Recording list and add it back.
+> `build.sh` signs with your Apple Development certificate if you have one (free with an Apple ID in Xcode), so permissions survive rebuilds. Without one it signs ad-hoc, and macOS may ask for permissions again after each rebuild: if screenshots stop working, remove Sidekick from the Screen Recording list and add it back.
 
 ## Use
 
