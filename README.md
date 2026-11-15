@@ -8,7 +8,7 @@ It uses **your existing Claude subscription** through the Claude Code CLI, so th
 |---|---|
 | Brain | `claude -p` (Claude Code) on your Pro/Max plan |
 | Speech-to-text | Apple Speech framework (on-device when supported) |
-| Voice | macOS built-in voices |
+| Voice | [Piper](https://github.com/rhasspy/piper) (free, offline), falls back to macOS built-in voices |
 | Screen | `screencapture` |
 
 Inspired by Farza's Clicky. This is an independent implementation.
@@ -39,9 +39,22 @@ On first launch, allow **Microphone**, **Speech Recognition** and **Screen Recor
 - Follow-ups remember context for 5 minutes. Use **New Conversation** in the menu bar to start over.
 - Pick Haiku (fastest), Sonnet (default) or Opus from the menu bar icon.
 
-### Better voice
+### Better voice (Piper, recommended)
 
-Download a Premium or Enhanced voice: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices. Sidekick picks the best one for your language automatically, or set one:
+The built-in macOS voices sound robotic. Sidekick uses [Piper](https://github.com/rhasspy/piper), a free neural voice that runs offline, if it's installed (~210 MB total):
+
+```bash
+D=~/.local/share/piper && mkdir -p $D && cd $D
+uv venv --python 3.12 venv && uv pip install --python venv/bin/python piper-tts
+B=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium
+curl -LO $B/en_US-lessac-medium.onnx -LO $B/en_US-lessac-medium.onnx.json
+```
+
+Relaunch Sidekick. If Piper is missing or fails, it falls back to the macOS voice.
+
+### macOS voice
+
+Without Piper, download a Premium or Enhanced voice: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices (Siri voices aren't available to apps). Sidekick picks the best one for your language automatically, or set one:
 
 ```bash
 defaults write dev.sidekick.app voice com.apple.voice.premium.en-US.Zoe
