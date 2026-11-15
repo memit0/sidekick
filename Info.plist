@@ -8,6 +8,8 @@
     <string>Sidekick</string>
     <key>CFBundleIdentifier</key>
     <string>dev.sidekick.app</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleExecutable</key>
     <string>Sidekick</string>
     <key>CFBundlePackageType</key>

@@ -41,6 +41,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         speaker.onFinish = { [weak self] in self?.finishSpeaking() }
         hotkey.onPress = { [weak self] in self?.startListening() }
         hotkey.onRelease = { [weak self] in self?.stopListening() }
+        hotkey.onEscape = { [weak self] in
+            guard let self, self.ui.phase == .speaking else { return }
+            self.speaker.stop()
+            self.finishSpeaking()
+        }
         hotkey.start()
     }
 
